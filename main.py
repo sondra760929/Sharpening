@@ -201,6 +201,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         reg.SetValueEx(open, "brightness", 0, reg.REG_SZ, str(self.brightness_factor))
         reg.SetValueEx(open, "contrast", 0, reg.REG_SZ, str(self.contrast_factor))
         reg.SetValueEx(open, "sharpeness", 0, reg.REG_SZ, str(self.sharpeness_factor))
+        reg.SetValueEx(open, "maxsize", 0, reg.REG_SZ, str(self.maxSize))
 
     def do_transform(self):
         # 동일한 폴더인지 검사
@@ -286,17 +287,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),jpg_quality]
             result, encoded_img = cv2.imencode(extention, image, encode_param)
             while len(encoded_img) > prev_file_size * self.maxSize:
+                if jpg_quality <= 20:
+                    break
                 jpg_quality = jpg_quality - 5
                 encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),jpg_quality]
                 result, encoded_img = cv2.imencode(extention, image, encode_param)
             # 바로 전단계부터 1씩 품질 감소
-            jpg_quality = jpg_quality + 5
-            encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),jpg_quality]
-            result, encoded_img = cv2.imencode(extention, image, encode_param)
-            while len(encoded_img) > prev_file_size * self.maxSize:
-                jpg_quality = jpg_quality - 1
+            if jpg_quality > 20:
+                jpg_quality = jpg_quality + 5
                 encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),jpg_quality]
                 result, encoded_img = cv2.imencode(extention, image, encode_param)
+                while len(encoded_img) > prev_file_size * self.maxSize:
+                    jpg_quality = jpg_quality - 1
+                    encode_param=[int(cv2.IMWRITE_JPEG_QUALITY),jpg_quality]
+                    result, encoded_img = cv2.imencode(extention, image, encode_param)
                 
             if result:
                 with open(dir_path_to + '/' + file_name, mode='w+b') as f:
